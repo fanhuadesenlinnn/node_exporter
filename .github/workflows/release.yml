@@ -57,7 +57,7 @@ jobs:
           cache: true
 
       - name: Test
-        run: go test ./...
+        run: make test
 
   build:
     name: Build ${{ matrix.goos }}-${{ matrix.asset_arch }}
