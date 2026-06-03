@@ -39,6 +39,23 @@ import (
 	"github.com/prometheus/node_exporter/collector"
 )
 
+func newLogger(config *promslog.Config) *slog.Logger {
+	if config.Level == nil {
+		config.Level = promslog.NewLevel()
+	}
+	if config.Writer == nil {
+		config.Writer = os.Stderr
+	}
+
+	opts := &slog.HandlerOptions{
+		Level: config.Level,
+	}
+	if config.Format != nil && config.Format.String() == "json" {
+		return slog.New(slog.NewJSONHandler(config.Writer, opts))
+	}
+	return slog.New(slog.NewTextHandler(config.Writer, opts))
+}
+
 // handler wraps an unfiltered http.Handler but uses a filtered handler,
 // created on the fly, if filtering is requested. Create instances with
 // newHandler.
@@ -209,7 +226,7 @@ func main() {
 	kingpin.CommandLine.UsageWriter(os.Stdout)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	logger := promslog.New(promslogConfig)
+	logger := newLogger(promslogConfig)
 
 	if *disableDefaultCollectors {
 		collector.DisableDefaultCollectors()
@@ -225,8 +242,9 @@ func main() {
 	http.Handle(*metricsPath, newHandler(!*disableExporterMetrics, *maxRequests, logger))
 	if *metricsPath != "/" {
 		landingConfig := web.LandingConfig{
-			Name:        "Node Exporter",
-			Description: "Prometheus Node Exporter",
+			Name:        "monitor agent",
+			Description: "",
+			HeaderColor: "#2f3a45",
 			Version:     version.Info(),
 			Links: []web.LandingLinks{
 				{

@@ -14,15 +14,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/prometheus/common/promslog"
 	"github.com/prometheus/procfs"
 )
 
@@ -33,6 +36,17 @@ var (
 const (
 	address = "localhost:19100"
 )
+
+func TestLoggerOmitsSource(t *testing.T) {
+	var buf bytes.Buffer
+	logger := newLogger(&promslog.Config{Writer: &buf})
+
+	logger.Info("test message")
+
+	if got := buf.String(); strings.Contains(got, "source=") {
+		t.Fatalf("expected log output without source field, got %q", got)
+	}
+}
 
 func TestFileDescriptorLeak(t *testing.T) {
 	if _, err := os.Stat(binary); err != nil {
